@@ -203,6 +203,22 @@ Values are illustrative.
 
 Returns the latest available quote (price, volume, previous close, and change), which may differ from the daily closing price. Verify availability, delay, and call cost on the Free plan before using this endpoint.
 
+```json
+{
+  "code": "AAPL.US",
+  "timestamp": 1791905400,
+  "gmtoffset": 0,
+  "open": 256.90,
+  "high": 258.45,
+  "low": 255.80,
+  "close": 257.80,
+  "volume": 31245600,
+  "previousClose": 254.20,
+  "change": 3.60,
+  "change_p": 1.4162
+}
+```
+
 ### C. Egyptian Exchange (EGX) Example
 
 `https://eodhd.com/api/eod/COMI.EGX?api_token=YOUR_API_TOKEN&from=2026-10-05&to=2026-10-09&period=d&fmt=json`
