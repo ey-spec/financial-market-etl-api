@@ -129,3 +129,125 @@ Returns the latest available price, which may differ from the daily closing pric
 
 ---
 
+# Part 2: EODHD
+
+The financial market ETL pipeline will use **EODHD** as its secondary data provider for retrieving daily end-of-day stock prices, including Egyptian Exchange (EGX) symbols, and for cross-checking Twelve Data.
+
+- **Provider:** [EODHD](https://eodhd.com/)
+- **API documentation:** [EODHD End-of-Day Historical Data API](https://eodhd.com/financial-apis/api-for-historical-data-and-volumes)
+- **Supported exchanges:** [EODHD List of Stock Markets](https://eodhd.com/list-of-stock-markets)
+- **Plan:** Free
+
+## 2. API Usage Limits
+
+The Free plan provides the following limits:
+
+| Limit | Value |
+|---|---:|
+| Daily API calls | 20 |
+| History depth | 1 year |
+| Data type | End-of-day |
+
+## 3. API Endpoints
+
+### A. Daily Historical Prices
+
+`https://eodhd.com/api/eod/AAPL.US?api_token=YOUR_API_TOKEN&from=2026-10-05&to=2026-10-09&period=d&fmt=json`
+
+Returns a JSON array with one object per trading day (daily OHLCV data):
+
+| Field | Description |
+|---|---|
+| `date` | Trading date |
+| `open` | Opening price |
+| `high` | Daily high |
+| `low` | Daily low |
+| `close` | Closing price |
+| `adjusted_close` | Close adjusted for splits and dividends |
+| `volume` | Trading volume |
+
+The response has no metadata block and no status field.
+
+**Target tables:** `fact_daily_prices` (OHLCV). `dim_symbol` details (name, exchange, currency) come from configuration, since the response does not include them.
+
+## Example: EODHD `eod` Response
+
+Values are illustrative.
+
+```json
+[
+  {
+    "date": "2026-10-08",
+    "open": 251.10,
+    "high": 255.60,
+    "low": 250.40,
+    "close": 254.20,
+    "adjusted_close": 254.20,
+    "volume": 38901200
+  },
+  {
+    "date": "2026-10-09",
+    "open": 254.50,
+    "high": 258.30,
+    "low": 253.20,
+    "close": 257.80,
+    "adjusted_close": 257.80,
+    "volume": 45678900
+  }
+]
+```
+
+### B. Latest Price
+
+`https://eodhd.com/api/real-time/AAPL.US?api_token=YOUR_API_TOKEN&fmt=json`
+
+Returns the latest available quote (price, volume, previous close, and change), which may differ from the daily closing price. Verify availability, delay, and call cost on the Free plan before using this endpoint.
+
+### C. Egyptian Exchange (EGX) Example
+
+`https://eodhd.com/api/eod/COMI.EGX?api_token=YOUR_API_TOKEN&from=2026-10-05&to=2026-10-09&period=d&fmt=json`
+
+Ticker format is `SYMBOL.EXCHANGE`, for example `AAPL.US` and `COMI.EGX`. Confirm each ticker on the supported exchanges page.
+
+## 4. Critical ETL Rules
+
+1. **Data types:** Numbers arrive as JSON numbers. Convert `date` to a date and `volume` to an integer.
+2. **Ordering:** Sort historical records oldest to newest before calculating returns or moving averages.
+3. **Incomplete data:** End-of-day bars appear only after the market closes. An empty result for today is not necessarily an error. Process finalized daily data after market close.
+4. **Symbol mapping:** Rows do not contain the symbol; associate each row with the symbol from the request.
+5. **Precision:** Preserve calculation precision and apply consistent database decimal types. Store both `close` and `adjusted_close`, and use one consistently for returns.
+6. **Upserts:** Use `(symbol_id, trading_date)` as the daily price key to prevent duplicates and update revised records.
+7. **Error handling:** An empty array `[]` can mean a reversed date range (`from` later than `to`), a weekend or holiday, an unknown symbol, or an unpublished bar. Validate the payload shape, and implement throttling, retries, and logging. Track the 20 calls per day budget.
+8. **Security:** Store the API token in an environment variable or secrets manager, never in source control.
+
+## 5. Main Analytical Outputs
+
+- Daily percentage returns.
+- Rolling moving averages.
+- Daily trading-volume statistics.
+- EGX symbol coverage.
+- Cross-check of Twelve Data values (tested for AAPL: OHLCV matched).
+
+**Important:** Verify endpoint behavior and call limits against the official documentation before implementation.
+
+---
+
+## EODHD — API Parameters
+
+### Required Parameters
+
+- `symbol` (string, in the URL path): The ticker and exchange code in the format `SYMBOL.EXCHANGE`, e.g. `AAPL.US` or `COMI.EGX`.
+- `api_token` (string): Your EODHD API token.
+
+### Optional Parameters
+
+- `fmt` (string): Response format: `json` or `csv`. Use `json`; CSV may be the default if omitted.
+- `period` (string): Data granularity: `d` (daily), `w` (weekly), or `m` (monthly). Default is `d`.
+- `from` (string): Start date, formatted as `YYYY-MM-DD`.
+- `to` (string): End date, formatted as `YYYY-MM-DD`. Must not be earlier than `from`.
+- `order` (string): Sort order, either `a` (ascending, oldest first) or `d` (descending, newest first). Default is ascending.
+- `filter` (string): Return a single value instead of the full table, such as `last_close` or `last_volume`.
+
+**Official documentation:** [EODHD End-of-Day Historical Data API](https://eodhd.com/financial-apis/api-for-historical-data-and-volumes)
+
+---
