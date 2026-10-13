@@ -106,95 +106,26 @@ Returns the latest available price, which may differ from the daily closing pric
 
 ---
 
-# Part 2: Finnhub
+## Twelve Data — API Parameters
 
-## 1. Data Source
+### Required Parameters
 
-The financial market ETL pipeline will use **Finnhub** to retrieve historical stock prices.
+- `symbol` (string): The ticker symbol or instrument name, e.g. `AAPL`, `EUR/USD`, or `BTC/USD`. Multiple symbols may be supported as a comma-separated list, e.g. `AAPL,MSFT`, depending on the endpoint and plan but its symbol count as a request.
+- `interval` (string): The data granularity. Supported values include `1min`, `5min`, `15min`, `30min`, `45min`, `1h`, `2h`, `4h`, `1day`, `1week`, and `1month`.
+- `apikey` (string): Your Twelve Data API key. It can also be provided using the `Authorization: apikey YOUR_API_KEY` header.
 
-- **Provider:** [Finnhub](https://finnhub.io/)
-- **API documentation:** [Stock Candles API](https://finnhub.io/docs/api/stock-candles)
-- **Plan:** Free — $0/month
+### Optional Parameters
 
-## 2. API Usage Limits
+- `outputsize` (integer): Number of data points to retrieve. Default is `30`; maximum is `5000` per request, subject to endpoint and plan restrictions.
+- `start_date` (string): Start date/time, formatted as `YYYY-MM-DD` or `YYYY-MM-DD HH:MM:SS`.
+- `end_date` (string): End date/time for historical data.
+- `date` (string): Retrieve data for a specific date or supported relative keyword, such as `today`, `yesterday`, or `YYYY-MM-DD`.
+- `format` (string): Response format: `JSON` (default) or `CSV`.
+- `timezone` (string): Timezone for timestamps, such as `Exchange` (default), `UTC`, or an IANA timezone like `America/New_York`. Applies to intraday intervals shorter than one day.
+- `exchange` (string): Exchange name or MIC code to identify a specific listing when a symbol is ambiguous.
+- `order` (string): Sort order, either `ASC` (oldest first) or `DESC` (newest first).
 
-| Limit | Value |
-|---|---|
-| API calls per minute | 60 |
-| Monthly cost | $0 |
-| License | Personal use |
+**Official documentation:** [Twelve Data API Documentation](https://twelvedata.com/docs)
 
-**Pricing reference:** [Finnhub Pricing](https://finnhub.io/pricing)
+---
 
-The pipeline must respect the rate limit, track API calls, and handle throttling errors with retries and backoff.
-
-## 3. API Endpoints
-
-### A. Daily Historical Prices
-
-**Endpoint:**
-
-`https://finnhub.io/api/v1/stock/candle?symbol=AAPL&resolution=D&from=START_TIMESTAMP&to=END_TIMESTAMP&token=YOUR_API_KEY`
-
-| Parameter | Description |
-|---|---|
-| `symbol` | Stock ticker, e.g. `AAPL` |
-| `resolution` | `D` for daily candles |
-| `from` | Start time as a Unix timestamp |
-| `to` | End time as a Unix timestamp |
-| `token` | Finnhub API token |
-
-Returns daily OHLCV data in parallel arrays.
-
-| Field | Description |
-|---|---|
-| `o[]` | Opening prices |
-| `h[]` | Daily high prices |
-| `l[]` | Daily low prices |
-| `c[]` | Closing prices |
-| `v[]` | Trading volumes |
-| `t[]` | Unix timestamps |
-| `s` | Response status, such as `ok` or `no_data` |
-
-**Target table:** `fact_daily_prices`
-
-### Example: `stock/candle` Response
-
-```json
-{
-  "c": [257.80, 254.20],
-  "h": [258.30, 255.60],
-  "l": [253.20, 250.40],
-  "o": [254.50, 251.10],
-  "s": "ok",
-  "t": [1791504000, 1791417600],
-  "v": [45678900, 38901200]
-}
-```
-
-*Illustrative example only; values are not verified live market data.*
-
-Each array index represents one trading day. Values at matching indexes belong to the same candle.
-
-## 4. Critical ETL Rules
-
-1. **Data types:** Convert price arrays to decimal values, volume to an integer type, and timestamps to dates.
-2. **Array mapping:** Combine values at matching indexes into individual daily records.
-3. **Ordering:** Sort records oldest to newest before calculating returns or moving averages.
-4. **Missing data:** Handle `no_data`, missing fields, and incomplete candles.
-5. **Symbol mapping:** Add the requested symbol to each record because it is not included in the response.
-6. **Upserts:** Use `(symbol, trading_date)` as the daily price key to prevent duplicates and update revised records.
-7. **Error handling:** Validate response status and handle API errors, throttling, retries, and logging.
-8. **Security:** Store the API token in an environment variable or secrets manager, never in source control.
-
-## 5. Main Analytical Outputs
-
-- Daily percentage returns.
-- Rolling moving averages.
-- Daily trading-volume statistics.
-- Historical stock price analysis.
-
-**Official references:**
-- [Finnhub Stock Candles API](https://finnhub.io/docs/api/stock-candles)
-- [Finnhub Pricing](https://finnhub.io/pricing)
-- [Finnhub Terms of Service](https://finnhub.io/terms-of-service)
