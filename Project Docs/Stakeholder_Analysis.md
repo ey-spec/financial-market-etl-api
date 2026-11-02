@@ -23,7 +23,7 @@ The analysis follows four steps:
 | S2 | Program coordinator | Internal | On-time delivery that follows the project brief | High | Medium | Keep satisfied: submit each deliverable on schedule |
 | S3 | Project lead | Internal | Plan on track, scope under control, risks managed | High | High | Weekly check-ins; owns the risk log |
 | S4 | Team members (Data, Database, Orchestration, Backend, DevOps, Documentation) | Internal | Clear roles, fair workload, smooth integration between modules | Medium | High | Keep informed and involved: shared task board and Git repository |
-| S5 | Data providers (Twelve Data, Finnhub) | External | Fair use of the free tier; respect for rate limits and terms of service | High | Low | Monitor: throttling, retries with backoff, raw data stored as fallback |
+| S5 | Data providers (Twelve Data, EODHD) | External | Fair use of the free tier; respect for rate limits and terms of service | High | Low | Monitor: throttling, retries with backoff, raw data stored as fallback |
 | S6 | Data analysts (consumers of the analytics layer) | End users | Accurate, deduplicated, documented data and ready-made views | Low | High | Keep informed: data-quality reports, ERD, example SQL queries |
 | S7 | Pipeline operators / maintainers | End users | Clear logs, useful alerts, simple setup and deployment | Medium | High | Consult: README, API docs, Grafana dashboards |
 | S8 | Future reviewers (portfolio audience, recruiters) | External | Clean repository, working CI/CD, readable architecture | Low | Medium | Monitor: polish README and architecture diagram |
@@ -56,7 +56,7 @@ The stakeholder analysis explains several risks in the Risk Assessment:
 
 | Stakeholder | Related risk | Reason |
 | --- | --- | --- |
-| Data providers (S5) | API rate limits or downtime (High impact) | They hold high power over data access but have no stake in the project; the free tier allows only 8 requests per minute (Twelve Data) or 60 per minute (Finnhub). |
+| Data providers (S5) | API rate limits or downtime (High impact) | They hold high power over data access but have no stake in the project; the free tier allows only 8 requests per minute (Twelve Data) or 60 per minute (EODHD). |
 | Team members (S4) | Team availability (Medium impact) | Delivery depends on every role being filled and active. |
 | Instructor / evaluators (S1) | Scope creep (High impact) | Must requirements are fixed, so Phase 1 is completed before Phase 2. |
 | Pipeline operators (S7) | Credentials exposed in code; deployment failures | Operators rely on secure configuration and tested releases. |
