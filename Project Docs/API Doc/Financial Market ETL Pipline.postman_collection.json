@@ -1,0 +1,569 @@
+{
+  "info": {
+    "_postman_id": "dce08ae9-49b9-4181-8f4d-9d264f761dbe",
+    "name": "Financial Market ETL Pipline",
+    "description": "ETL REST API .",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "54532953",
+    "_collection_link": "https://go.postman.co/collection/54532953-dce08ae9-49b9-4181-8f4d-9d264f761dbe?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "1. Health and Monitoring",
+      "item": [
+        {
+          "name": "GET /health",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            },
+            "description": "Liveness: the process is alive. Auth: none."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /ready",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ready",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ready"
+              ]
+            },
+            "description": "Readiness: database reachable. Airflow status is reported but does not fail readiness. Auth: none."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /metrics",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{metricsToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics"
+              ]
+            },
+            "description": "Prometheus metrics. Auth: bearer token (METRICS_TOKEN), not the API key."
+          },
+          "response": []
+        }
+      ],
+      "description": "No API key needed (metrics uses its own bearer token)."
+    },
+    {
+      "name": "2. Runs",
+      "item": [
+        {
+          "name": "POST /api/v1/runs - incremental",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mode\": \"incremental\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/runs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "runs"
+              ]
+            },
+            "description": "Role: operator. Creates a queued run, triggers the DAG, returns 202 with run_id."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/v1/runs - backfill",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mode\": \"backfill\",\n  \"symbols\": [\"AAPL\", \"MSFT\"],\n  \"start_date\": \"2026-01-01\",\n  \"end_date\": \"2026-03-31\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/runs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "runs"
+              ]
+            },
+            "description": "Role: operator. Backfill needs start_date and end_date. symbols is optional and must be in the configured list."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/v1/runs - reprocess",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mode\": \"reprocess\",\n  \"source_run_id\": \"{{run_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/runs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "runs"
+              ]
+            },
+            "description": "Role: operator. Rebuilds from stored raw data (no API credits). Use a date range or source_run_id."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/runs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/runs?limit=100&offset=0&status=&mode=&trigger_type=&started_from=&started_to=",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "runs"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "100"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                },
+                {
+                  "key": "status",
+                  "value": ""
+                },
+                {
+                  "key": "mode",
+                  "value": ""
+                },
+                {
+                  "key": "trigger_type",
+                  "value": ""
+                },
+                {
+                  "key": "started_from",
+                  "value": ""
+                },
+                {
+                  "key": "started_to",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Role: reader. Newest first, paginated. Filters: status, mode, trigger_type, date range. The date-range parameter names are not fixed in E5-US4 yet (disabled below, confirm them)."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/runs/{run_id}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/runs/{{run_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "runs",
+                "{{run_id}}"
+              ]
+            },
+            "description": "Role: reader. Run detail with totals."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/runs/{run_id}/symbols",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/runs/{{run_id}}/symbols?status=",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "runs",
+                "{{run_id}}",
+                "symbols"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Role: reader. Per-symbol status and counters. Optional filter by status."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/runs/{run_id}/quality",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/runs/{{run_id}}/quality",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "runs",
+                "{{run_id}}",
+                "quality"
+              ]
+            },
+            "description": "Role: reader. Quality results of the run."
+          },
+          "response": []
+        }
+      ],
+      "description": "Trigger and monitor pipeline runs."
+    },
+    {
+      "name": "3. Market Data",
+      "item": [
+        {
+          "name": "GET /api/v1/symbols",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/symbols?limit=100&offset=0&exchange=&is_active=true",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "symbols"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "100"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                },
+                {
+                  "key": "exchange",
+                  "value": ""
+                },
+                {
+                  "key": "is_active",
+                  "value": "true"
+                }
+              ]
+            },
+            "description": "Role: reader. Symbols from dim_symbol. Filterable by exchange and is_active."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/symbols/{symbol}/prices",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/symbols/{{symbol}}/prices?start_date=2026-01-01&end_date=2026-03-31&include_preliminary=true&limit=1000&offset=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "symbols",
+                "{{symbol}}",
+                "prices"
+              ],
+              "query": [
+                {
+                  "key": "start_date",
+                  "value": "2026-01-01"
+                },
+                {
+                  "key": "end_date",
+                  "value": "2026-03-31"
+                },
+                {
+                  "key": "include_preliminary",
+                  "value": "true"
+                },
+                {
+                  "key": "limit",
+                  "value": "1000"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": "Role: reader. Daily prices and metrics, ordered by trade date ascending. start_date after end_date or a malformed date returns 422. Preliminary bars are excluded unless include_preliminary=true."
+          },
+          "response": []
+        }
+      ],
+      "description": "Symbols and daily prices with metrics. Role: reader."
+    },
+    {
+      "name": "4. Analytics",
+      "item": [
+        {
+          "name": "GET /api/v1/analytics/top-movers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/analytics/top-movers?n=5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "analytics",
+                "top-movers"
+              ],
+              "query": [
+                {
+                  "key": "n",
+                  "value": "5"
+                }
+              ]
+            },
+            "description": "Top n gainers and bottom n losers (default n = 5) from mv_top_movers_30d."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/analytics/monthly-volume",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/analytics/monthly-volume?symbol={{symbol}}&from_month=&to_month=",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "analytics",
+                "monthly-volume"
+              ],
+              "query": [
+                {
+                  "key": "symbol",
+                  "value": "{{symbol}}"
+                },
+                {
+                  "key": "from_month",
+                  "value": ""
+                },
+                {
+                  "key": "to_month",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Average volume per month and change vs previous month for one symbol. The month-range parameter names are not fixed in E5-US6 yet (disabled below, confirm them). Unknown symbol returns 404."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/analytics/best-worst-days",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/analytics/best-worst-days?symbol={{symbol}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "analytics",
+                "best-worst-days"
+              ],
+              "query": [
+                {
+                  "key": "symbol",
+                  "value": "{{symbol}}"
+                }
+              ]
+            },
+            "description": "Top 5 and bottom 5 daily returns for one symbol (ties share a rank). Unknown symbol returns 404."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/analytics/volume-stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/analytics/volume-stats?symbol={{symbol}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "analytics",
+                "volume-stats"
+              ],
+              "query": [
+                {
+                  "key": "symbol",
+                  "value": "{{symbol}}"
+                }
+              ]
+            },
+            "description": "Average, min, and max volume per symbol, optionally for one symbol."
+          },
+          "response": []
+        }
+      ],
+      "description": "Read from the materialized views. Responses include as_of. Role: reader."
+    }
+  ],
+  "auth": {
+    "type": "apikey",
+    "apikey": [
+      {
+        "key": "key",
+        "value": "X-API-Key",
+        "type": "string"
+      },
+      {
+        "key": "value",
+        "value": "{{apiKey}}",
+        "type": "string"
+      },
+      {
+        "key": "in",
+        "value": "header",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:8000"
+    },
+    {
+      "key": "apiKey",
+      "value": ""
+    },
+    {
+      "key": "metricsToken",
+      "value": ""
+    },
+    {
+      "key": "run_id",
+      "value": ""
+    },
+    {
+      "key": "symbol",
+      "value": "AAPL"
+    }
+  ]
+}
